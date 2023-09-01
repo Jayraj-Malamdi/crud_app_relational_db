@@ -1,0 +1,57 @@
+version : "3"
+
+services:
+# database service: named as database_mysql
+  database_mysql:
+    image: mysql/mysql-server
+    container_name: database_mysql
+    env_file: ./trainee_backend/.env
+    restart: always  
+    networks:
+      - network_2
+    volumes:
+      # - ./trainee_backend/database/storage/:/data/db    # bind mount
+      - volume_data/:/var/lib/mysql                                # volume mount
+
+# backend service: named as trainee_backend
+  trainee_backend:
+    build:
+      dockerfile: Dockerfile
+      context: ./trainee_backend/
+    container_name: trainee_backend
+    restart: always
+    networks:
+      - network_2
+      - network_1
+    # mem_limit: 300m
+    # cpus: '0.1'
+    depends_on:
+      - database_mysql
+    
+# frontend service: named as trainee_frontend
+  trainee_frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./trainee_frontend/
+    container_name: trainee_frontend
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - network_1
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/ssl/:/etc/nginx/ssl
+    depends_on:
+      - trainee_backend
+
+# networks used for connecting different containers
+networks:
+  network_1:
+    driver: bridge
+  network_2:
+# volumes used 
+volumes:                   # volume mount declared
+  volume_data:          
+
